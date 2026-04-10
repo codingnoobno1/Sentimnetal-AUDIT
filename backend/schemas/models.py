@@ -2,6 +2,17 @@ from pydantic import BaseModel, Field
 from typing import Optional, Any, Dict, List
 from datetime import datetime
 
+class DatasetProfile(BaseModel):
+    """
+    Fingerprint of the fine-tuning dataset composition.
+    """
+    percent_code: float = 0.0
+    percent_reasoning: float = 0.0
+    percent_chat: float = 0.0
+    percent_factual: float = 0.0
+    total_samples: int = 0
+    license: str = "unknown"
+
 class ModelConfig(BaseModel):
     model_id: str
     is_baseline: bool = False
@@ -9,6 +20,10 @@ class ModelConfig(BaseModel):
         default_factory=lambda: {"temperature": 0.1, "max_new_tokens": 512}
     )
     is_local: bool = False
+    
+    # NEW: Prometheus Metadata
+    dataset_tag: str = "unknown"
+    dataset_profile: Optional[DatasetProfile] = None
 
 class AuditRequest(BaseModel):
     models: List[ModelConfig]
@@ -45,8 +60,11 @@ class DomainResult(BaseModel):
 
 class Diagnostic(BaseModel):
     domain: str
-    root_cause: str
-    recommendation: str
+    issue: str
+    likely_cause: str
+    fix_recommendation: str
+    severity: str # "low", "medium", "high"
+    score_delta: float
 
 class AuditRun(BaseModel):
     id: str
