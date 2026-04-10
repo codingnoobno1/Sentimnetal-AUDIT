@@ -33,6 +33,12 @@ export interface MistralVerdict {
     completeness: { a: number; b: number };
     safety: { a: number; b: number };
   };
+  provider?: string;
+  confidence?: number;
+  meta?: {
+    judges_used?: number;
+    variance?: number;
+  };
 }
 
 export interface CompareTrialResult {

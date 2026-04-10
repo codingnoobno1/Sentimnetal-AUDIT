@@ -96,14 +96,18 @@ export default function CompareOrchestrator() {
           const newTrials = [...prev.trials];
           newTrials[idx] = { ...newTrials[idx], verdict };
 
-          // Recalculate summary
+          // Recalculate summary with Prometheus weights
           const evaluated = newTrials.filter(t => t.verdict);
+          const totalConfidence = evaluated.reduce((acc, t) => acc + (t.verdict?.confidence || 0.95), 0);
+          const avgConfidence = totalConfidence / evaluated.length || 0;
+
           const summary = {
             model_a_wins: evaluated.filter(t => t.verdict!.winner === "model_a").length,
             model_b_wins: evaluated.filter(t => t.verdict!.winner === "model_b").length,
             ties: evaluated.filter(t => t.verdict!.winner === "tie").length,
             model_a_avg: evaluated.reduce((a, t) => a + t.verdict!.model_a_score, 0) / evaluated.length,
             model_b_avg: evaluated.reduce((a, t) => a + t.verdict!.model_b_score, 0) / evaluated.length,
+            avg_confidence: avgConfidence
           };
           return { ...prev, trials: newTrials, summary };
         });

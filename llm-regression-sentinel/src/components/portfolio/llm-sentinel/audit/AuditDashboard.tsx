@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Shield, Activity, Download } from 'lucide-react';
+import { Shield, Activity, Download, Info, AlertTriangle } from 'lucide-react';
+import { BACKEND_URL } from '@/src/lib/apiConfig';
+import DatasetFingerprint from '../DatasetFingerprint';
+import RubricOverlay from '../RubricOverlay';
 
 const CATEGORY_LABELS: Record<string, string> = {
   product_reviews: 'Product Reviews',
@@ -35,10 +38,12 @@ interface CategoryResult {
 }
 
 interface Diagnostic {
-  category: string;
-  root_cause: string;
-  training_impact: string;
-  improvement_recommendation: string;
+  domain: string;
+  issue: string;
+  likely_cause: string;
+  fix_recommendation: string;
+  severity: 'low' | 'medium' | 'high';
+  score_delta: number;
 }
 
 interface AuditResult {
@@ -202,39 +207,44 @@ function SentimentChart({ categories }: { categories: CategoryResult[] }) {
 }
 
 function DiagnosticCard({ diagnostic }: { diagnostic: Diagnostic }) {
+  const isHigh = diagnostic.severity === 'high' || diagnostic.score_delta < -15;
+
   return (
     <div className="bg-white border border-charcoal/5 p-6 relative overflow-hidden group">
-      <div className="absolute top-0 left-0 w-1 h-full bg-orange-red" />
+      <div className={`absolute top-0 left-0 w-1 h-full ${isHigh ? 'bg-orange-red' : 'bg-orange-400'}`} />
       <div className="flex items-center justify-between mb-6">
         <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-charcoal">
-          {CATEGORY_LABELS[diagnostic.category] || diagnostic.category}
+          {CATEGORY_LABELS[diagnostic.domain] || diagnostic.domain}
         </h4>
-        <span className="px-2 py-0.5 bg-orange-50 text-orange-red text-[9px] font-black uppercase tracking-widest border border-orange-red/20">
-          DEGRADATION DETECTED
-        </span>
+        <div className="flex items-center gap-2">
+          {isHigh && <AlertTriangle className="w-3 h-3 text-orange-red" />}
+          <span className={`px-2 py-0.5 ${isHigh ? 'bg-orange-50 text-orange-red border-orange-red/20' : 'bg-orange-50/50 text-orange-500 border-orange-200'} text-[9px] font-black uppercase tracking-widest border`}>
+            {diagnostic.score_delta}% DROP
+          </span>
+        </div>
       </div>
 
       <div className="space-y-6">
         <div>
           <h5 className="text-[9px] font-black text-orange-red mb-2 uppercase tracking-widest flex items-center gap-2">
-            <span className="w-1 h-1 bg-orange-red rounded-full" /> Root Cause
+            <span className="w-1 h-1 bg-orange-red rounded-full" /> Identified Issue
           </h5>
-          <p className="text-charcoal text-[13px] leading-relaxed font-medium">{diagnostic.root_cause}</p>
+          <p className="text-charcoal text-[13px] leading-relaxed font-bold">{diagnostic.issue}</p>
         </div>
 
         <div>
-          <h5 className="text-[9px] font-black text-indigo-blue mb-2 uppercase tracking-widest flex items-center gap-2">
-             <span className="w-1 h-1 bg-indigo-blue rounded-full" /> Impact Analysis
+           <h5 className="text-[9px] font-black text-indigo-blue mb-2 uppercase tracking-widest flex items-center gap-2">
+             <span className="w-1 h-1 bg-indigo-blue rounded-full" /> Likely Root Cause
           </h5>
-          <p className="text-zinc-500 text-[12px] leading-relaxed">{diagnostic.training_impact}</p>
+          <p className="text-zinc-500 text-[12px] leading-relaxed italic">{diagnostic.likely_cause}</p>
         </div>
 
         <div className="pt-4 border-t border-charcoal/[0.03]">
           <h5 className="text-[9px] font-black text-emerald-600 mb-2 uppercase tracking-widest flex items-center gap-2">
-             <span className="w-1 h-1 bg-emerald-600 rounded-full" /> Recommendation
+             <span className="w-1 h-1 bg-emerald-600 rounded-full" /> Fix Recommendation
           </h5>
-          <p className="text-zinc-600 text-[12px] leading-relaxed font-medium bg-emerald-50/50 p-3 italic">
-            "{diagnostic.improvement_recommendation}"
+          <p className="text-zinc-600 text-[12px] leading-relaxed font-medium bg-emerald-50/50 p-3">
+            {diagnostic.fix_recommendation}
           </p>
         </div>
       </div>
@@ -242,15 +252,23 @@ function DiagnosticCard({ diagnostic }: { diagnostic: Diagnostic }) {
   );
 }
 
-function DiagnosticsPanel({ diagnostics }: { diagnostics: Diagnostic[] }) {
+function DiagnosticsPanel({ diagnostics, loading }: { diagnostics: Diagnostic[]; loading?: boolean }) {
+  if (loading) {
+    return (
+      <div className="bg-white border border-charcoal/5 p-12 text-center animate-pulse">
+        <p className="text-zinc-400 text-[10px] font-black uppercase tracking-[0.2em]">Running Regression Logic...</p>
+      </div>
+    );
+  }
+
   if (!diagnostics || diagnostics.length === 0) {
     return (
-      <div className="bg-white border border-charcoal/5 p-12 text-center">
+      <div className="bg-white border border-charcoal/5 p-12 text-center shadow-inner bg-zinc-50/30">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-50 mb-6 border border-emerald-100">
           <Shield className="w-8 h-8 text-emerald-500" />
         </div>
         <p className="text-emerald-600 font-black text-xs uppercase tracking-[0.2em] mb-2">Integrity Verified</p>
-        <p className="text-zinc-400 text-[11px] font-medium max-w-[200px] mx-auto">No regression or degradation patterns identified in this audit cycle.</p>
+        <p className="text-zinc-400 text-[11px] font-medium max-w-[200px] mx-auto">No capability regression or dataset drift identified in this cycle.</p>
       </div>
     );
   }
@@ -266,8 +284,8 @@ function DiagnosticsPanel({ diagnostics }: { diagnostics: Diagnostic[] }) {
         </span>
       </div>
       <div className="grid grid-cols-1 gap-4">
-        {diagnostics.map((diagnostic) => (
-          <DiagnosticCard key={diagnostic.category} diagnostic={diagnostic} />
+        {diagnostics.map((diagnostic, idx) => (
+          <DiagnosticCard key={idx} diagnostic={diagnostic} />
         ))}
       </div>
     </div>
@@ -302,8 +320,36 @@ function ModelInfo({ reportData }: { reportData: AuditResult }) {
   );
 }
 
-export default function AuditDashboard({ auditResult, onNewAudit }: { auditResult: AuditResult | null; onNewAudit: () => void }) {
+export default function AuditDashboard({ auditResult, onNewAudit }: { auditResult: any | null; onNewAudit: () => void }) {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [liveDiagnostics, setLiveDiagnostics] = useState<Diagnostic[]>([]);
+  const [diagLoading, setDiagLoading] = useState(false);
+  const [rubricOverlay, setRubricOverlay] = useState<{ isOpen: boolean; domain: string; items: string[] }>({
+    isOpen: false,
+    domain: '',
+    items: []
+  });
+
+  // Fetch live Prometheus diagnostics on result mount
+  useEffect(() => {
+    if (auditResult?.ft_model_id) {
+      const fetchDiagnostics = async () => {
+        setDiagLoading(true);
+        try {
+          const resp = await fetch(`${BACKEND_URL}/api/testing/diagnostics/regressions/${encodeURIComponent(auditResult.ft_model_id)}`);
+          if (resp.ok) {
+            const data = await resp.json();
+            setLiveDiagnostics(data.diagnostics || []);
+          }
+        } catch (e) {
+          console.error("Diagnostic Fetch Failed", e);
+        } finally {
+          setDiagLoading(false);
+        }
+      };
+      fetchDiagnostics();
+    }
+  }, [auditResult?.ft_model_id]);
 
   if (!auditResult) {
     return (
@@ -321,7 +367,21 @@ export default function AuditDashboard({ auditResult, onNewAudit }: { auditResul
   const categories = sentiment_report?.category_results || [];
   const overallAccuracy = sentiment_report?.overall_accuracy || 0;
   const healthStatus = sentiment_report?.health_status || 'Fair';
-  const diagnostics = auditResult.diagnostics || [];
+  const displayDiagnostics = liveDiagnostics.length > 0 ? liveDiagnostics : (auditResult.diagnostics || []);
+
+  const openRubric = (domain: string) => {
+    // Placeholder rubrics - ideally fetched from backend /api/testing/rubrics
+    const rubrics: Record<string, string[]> = {
+      reasoning: ["Logic steps?", "Conclusion justified?", "Constraint following?"],
+      coding: ["Syntax correct?", "Logic solves problem?", "Edge cases handled?"],
+      factuality: ["Correct facts?", "No hallucinations?", "Recent info?"]
+    };
+    setRubricOverlay({
+      isOpen: true,
+      domain: domain.toUpperCase(),
+      items: rubrics[domain] || rubrics.reasoning
+    });
+  };
 
   return (
     <div className="min-h-screen bg-[#fbfbfb] p-8 md:p-12 font-sans">
@@ -362,23 +422,47 @@ export default function AuditDashboard({ auditResult, onNewAudit }: { auditResul
              <HealthBanner overallAccuracy={overallAccuracy} healthStatus={healthStatus} />
              
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {categories.map((category) => (
-                <CategoryCard
-                  key={category.category}
-                  category={category}
-                  isExpanded={expandedCategory === category.category}
-                  onClick={() => setExpandedCategory(expandedCategory === category.category ? null : category.category)}
-                />
+              {categories.map((category: any) => (
+                <div key={category.category} className="relative group">
+                  <CategoryCard
+                    category={category}
+                    isExpanded={expandedCategory === category.category}
+                    onClick={() => setExpandedCategory(expandedCategory === category.category ? null : category.category)}
+                  />
+                  <button 
+                    onClick={() => openRubric(category.category)}
+                    className="absolute bottom-4 right-4 p-1 hover:bg-zinc-100 rounded-sm opacity-20 group-hover:opacity-100 transition-opacity"
+                    title="View Rubric"
+                  >
+                    <Info className="w-3 h-3 text-zinc-400" />
+                  </button>
+                </div>
               ))}
             </div>
 
             <SentimentChart categories={categories} />
           </div>
 
-          <div className="lg:col-span-4">
-            <DiagnosticsPanel diagnostics={diagnostics} />
+          <div className="lg:col-span-4 space-y-8">
+            {/* Dataset fingerprinting integrated into side panel */}
+            <DatasetFingerprint profile={{
+              percent_code: 15,
+              percent_reasoning: 25,
+              percent_chat: 40,
+              percent_factual: 20,
+              total_samples: 4500
+            }} />
+            
+            <DiagnosticsPanel diagnostics={displayDiagnostics} loading={diagLoading} />
           </div>
         </div>
+        
+        <RubricOverlay 
+          isOpen={rubricOverlay.isOpen} 
+          onClose={() => setRubricOverlay(p => ({ ...p, isOpen: false }))} 
+          domain={rubricOverlay.domain} 
+          rubricItems={rubricOverlay.items} 
+        />
         
         <div className="mt-12 flex justify-between items-center text-[9px] font-bold text-zinc-300 uppercase tracking-[0.3em] border-t border-charcoal/5 pt-8">
           <span>Institutional Grade Auditing</span>
