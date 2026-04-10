@@ -1,0 +1,58 @@
+{
+  "test_suites": [
+    {
+      "id": "arithmetic_v1",
+      "domain": "Arithmetic",
+      "cases": [
+        {
+          "id": "math_01",
+          "prompt": "Calculate the result of (124 * 5) + (450 / 15). Provide only the number.",
+          "reference": "650",
+          "rubric": "Accuracy: 1 if result is 650, 0 otherwise."
+        },
+        {
+          "id": "math_02",
+          "prompt": "What is 15% of 4500?",
+          "reference": "675",
+          "rubric": "Accuracy: 1 if result is 675."
+        }
+      ]
+    },
+    {
+      "id": "code_v1",
+      "domain": "Code Generation",
+      "cases": [
+        {
+          "id": "code_01",
+          "prompt": "Write a Python function to check if a string is a palindrome. Use minimal lines.",
+          "reference": "def is_p(s): return s == s[::-1]",
+          "rubric": "Functionality: Correct logic (1-5). Efficiency: Line count constraint (1-5)."
+        }
+      ]
+    },
+    {
+      "id": "logic_v1",
+      "domain": "Logical Reasoning",
+      "cases": [
+        {
+          "id": "logic_01",
+          "prompt": "All humans are mortal. Socrates is a human. Therefore, is Socrates mortal? Explain in one sentence.",
+          "reference": "Yes, Socrates is mortal because he is a human and all humans are mortal.",
+          "rubric": "Validity: Correct conclusion (Yes). Soundness: Correct reasoning steps mentioned."
+        }
+      ]
+    },
+    {
+      "id": "instruction_v1",
+      "domain": "Instruction Following",
+      "cases": [
+        {
+          "id": "inst_01",
+          "prompt": "Write a 50-word story about a robot. Do NOT use the word 'machine' or 'electronic'.",
+          "reference": null,
+          "rubric": "Constraint: Word count ~50. Negative Constraint: No 'machine' or 'electronic'."
+        }
+      ]
+    }
+  ]
+}

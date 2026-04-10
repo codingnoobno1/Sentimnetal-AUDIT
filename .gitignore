@@ -1,0 +1,52 @@
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env*
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.next/
+out/
+build/
+dist/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+instance/
+.pytest_cache/
+.ruff_cache/
+
+# Large Files & Models
+backend/models/
+models/
+*.bin
+*.pt
+*.pth
+*.gguf
+*.onnx
+backend/test/vertex-express-key.json
+
+# IDEs & System
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Project Specific
+.gemini/
+.system_generated/
+diagnostics/*.json
+!diagnostics/.gitkeep

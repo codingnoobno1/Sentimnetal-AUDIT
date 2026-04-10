@@ -1,0 +1,327 @@
+{
+  "prompts": [
+    {
+      "id": "clinical_001",
+      "domain": "clinical",
+      "prompt_text": "A 45-year-old patient presents with sudden onset chest pain radiating to the left arm, diaphoresis, and shortness of breath. ECG shows ST-segment elevation in leads II, III, and aVF. What is the most likely diagnosis and the immediate management priority?",
+      "expected_answer": "Acute inferior STEMI. Immediate management includes aspirin, dual antiplatelet therapy, and urgent PCI or thrombolysis within 90 minutes.",
+      "scoring_method": "llm_judge",
+      "difficulty": "hard",
+      "category": "diagnosis",
+      "rubric": "Must identify STEMI, mention aspirin, and mention PCI or thrombolysis with time window"
+    },
+    {
+      "id": "clinical_002",
+      "domain": "clinical",
+      "prompt_text": "Explain the difference between Type 1 and Type 2 diabetes mellitus, including pathophysiology, typical age of onset, and first-line treatment.",
+      "expected_answer": "Type 1 is autoimmune destruction of beta cells (insulin-dependent), typically juvenile onset, treated with insulin. Type 2 is insulin resistance, typically adult onset, first-line treatment is metformin.",
+      "scoring_method": "llm_judge",
+      "difficulty": "medium",
+      "category": "pathophysiology",
+      "rubric": "Must differentiate autoimmune vs resistance, mention age differences, and correct first-line treatments"
+    },
+    {
+      "id": "clinical_003",
+      "domain": "clinical",
+      "prompt_text": "A patient on warfarin therapy has an INR of 8.5 with no active bleeding. What is the appropriate management?",
+      "expected_answer": "Hold warfarin, administer oral Vitamin K (2.5-5mg), recheck INR in 24 hours. No need for FFP or PCC if no bleeding.",
+      "scoring_method": "llm_judge",
+      "difficulty": "hard",
+      "category": "pharmacology",
+      "rubric": "Must mention holding warfarin, oral Vitamin K, and monitoring. Should NOT recommend FFP for non-bleeding patient"
+    },
+    {
+      "id": "clinical_004",
+      "domain": "clinical",
+      "prompt_text": "What are the classic symptoms of meningitis and what immediate investigations should be ordered upon suspicion?",
+      "expected_answer": "Classic triad: headache, neck stiffness, photophobia with fever. Immediate: blood cultures, lumbar puncture for CSF analysis, CT head if signs of raised ICP.",
+      "scoring_method": "llm_judge",
+      "difficulty": "medium",
+      "category": "diagnosis",
+      "rubric": "Must mention the triad, blood cultures, and lumbar puncture"
+    },
+    {
+      "id": "clinical_005",
+      "domain": "clinical",
+      "prompt_text": "Classify the drug interaction severity: Prescribing fluoxetine to a patient already on MAO inhibitors.",
+      "expected_answer": "Contraindicated. Risk of serotonin syndrome which can be fatal. A 14-day washout period is required between discontinuing MAOIs and starting SSRIs.",
+      "scoring_method": "llm_judge",
+      "difficulty": "hard",
+      "category": "pharmacology",
+      "rubric": "Must identify as contraindicated, mention serotonin syndrome, and washout period"
+    },
+    {
+      "id": "clinical_006",
+      "domain": "clinical",
+      "prompt_text": "Summarize the WHO classification of hypertension stages and their corresponding blood pressure ranges.",
+      "expected_answer": "Normal: <120/80. Elevated: 120-129/<80. Stage 1: 130-139/80-89. Stage 2: ≥140/≥90. Hypertensive crisis: >180/>120.",
+      "scoring_method": "llm_judge",
+      "difficulty": "easy",
+      "category": "classification",
+      "rubric": "Must correctly list at least 3 stages with accurate BP ranges"
+    },
+    {
+      "id": "legal_001",
+      "domain": "legal",
+      "prompt_text": "Explain the doctrine of 'res judicata' and provide an example of its application in civil litigation.",
+      "expected_answer": "Res judicata prevents re-litigation of claims already decided by a competent court. Example: If a plaintiff sues for breach of contract and loses, they cannot file a new suit on the same breach.",
+      "scoring_method": "llm_judge",
+      "difficulty": "medium",
+      "category": "doctrine",
+      "rubric": "Must define the doctrine accurately and provide a valid civil law example"
+    },
+    {
+      "id": "legal_002",
+      "domain": "legal",
+      "prompt_text": "What are the essential elements required to establish a claim of negligence under common law?",
+      "expected_answer": "Four elements: duty of care, breach of duty, causation (proximate cause), and damages. The plaintiff must prove all four on a balance of probabilities.",
+      "scoring_method": "llm_judge",
+      "difficulty": "medium",
+      "category": "tort_law",
+      "rubric": "Must list all four elements: duty, breach, causation, damages"
+    },
+    {
+      "id": "legal_003",
+      "domain": "legal",
+      "prompt_text": "Distinguish between 'murder' and 'culpable homicide not amounting to murder' under the Indian Penal Code (Sections 299 and 300).",
+      "expected_answer": "Section 299 (culpable homicide): act done with intention or knowledge that it is likely to cause death. Section 300 (murder): act done with intention to cause death, or bodily injury sufficient to cause death in ordinary course of nature. Murder requires higher degree of intention.",
+      "scoring_method": "llm_judge",
+      "difficulty": "hard",
+      "category": "criminal_law",
+      "rubric": "Must reference Sections 299/300, and explain the difference in intention threshold"
+    },
+    {
+      "id": "legal_004",
+      "domain": "legal",
+      "prompt_text": "What is the Right to Information Act, 2005 in India? Who is exempted from providing information under it?",
+      "expected_answer": "RTI Act gives citizens the right to request information from public authorities. Exemptions include Section 8 (security, sovereignty, privacy), Section 24 (intelligence agencies like RAW, IB).",
+      "scoring_method": "llm_judge",
+      "difficulty": "medium",
+      "category": "constitutional_law",
+      "rubric": "Must mention citizen's right, public authorities, and at least one exemption category"
+    },
+    {
+      "id": "legal_005",
+      "domain": "legal",
+      "prompt_text": "Draft a brief force majeure clause for a commercial contract covering pandemics and natural disasters.",
+      "expected_answer": "Neither party shall be liable for failure to perform obligations due to events beyond reasonable control, including but not limited to pandemics, earthquakes, floods, government actions, or acts of God, provided the affected party notifies the other within 14 days.",
+      "scoring_method": "llm_judge",
+      "difficulty": "hard",
+      "category": "contract_drafting",
+      "rubric": "Must include essential elements: non-liability clause, list of force majeure events including pandemic, notification requirement"
+    },
+    {
+      "id": "legal_006",
+      "domain": "legal",
+      "prompt_text": "Explain the concept of 'anticipatory bail' under Section 438 of the Code of Criminal Procedure.",
+      "expected_answer": "Anticipatory bail is pre-arrest bail granted by High Court or Sessions Court when a person apprehends arrest for a non-bailable offence. It directs that if arrested, the person shall be released on bail.",
+      "scoring_method": "llm_judge",
+      "difficulty": "medium",
+      "category": "criminal_procedure",
+      "rubric": "Must mention pre-arrest nature, which courts can grant it, and non-bailable offence context"
+    },
+    {
+      "id": "ca_001",
+      "domain": "ca_commerce",
+      "prompt_text": "Calculate the depreciation of machinery costing ₹10,00,000 with a useful life of 10 years and salvage value of ₹1,00,000 using the Straight Line Method. Show the annual depreciation and the depreciation rate.",
+      "expected_answer": "Annual Depreciation = (10,00,000 - 1,00,000) / 10 = ₹90,000 per year. Depreciation Rate = 90,000 / 10,00,000 × 100 = 9%.",
+      "scoring_method": "llm_judge",
+      "difficulty": "easy",
+      "category": "accounting",
+      "rubric": "Must show correct formula, arrive at ₹90,000 annual depreciation, and 9% rate"
+    },
+    {
+      "id": "ca_002",
+      "domain": "ca_commerce",
+      "prompt_text": "Explain the difference between FIFO and LIFO inventory valuation methods and their impact on profit during inflation.",
+      "expected_answer": "FIFO (First In, First Out): oldest stock sold first, lower COGS during inflation, higher profit, higher tax. LIFO (Last In, First Out): newest stock sold first, higher COGS during inflation, lower profit, lower tax. India follows Ind AS which does not permit LIFO.",
+      "scoring_method": "llm_judge",
+      "difficulty": "medium",
+      "category": "accounting",
+      "rubric": "Must explain both methods, discuss inflation impact on profit, and correctly state which shows higher profit"
+    },
+    {
+      "id": "ca_003",
+      "domain": "ca_commerce",
+      "prompt_text": "What is GST Input Tax Credit (ITC)? What are the conditions for claiming ITC under Section 16 of the CGST Act?",
+      "expected_answer": "ITC allows businesses to reduce their tax liability by claiming credit for taxes paid on inputs. Conditions: must possess tax invoice, goods/services received, tax paid to government, returns filed, payment within 180 days.",
+      "scoring_method": "llm_judge",
+      "difficulty": "medium",
+      "category": "taxation",
+      "rubric": "Must define ITC, reference Section 16, and list at least 3 conditions"
+    },
+    {
+      "id": "ca_004",
+      "domain": "ca_commerce",
+      "prompt_text": "Prepare a simple Trading Account for the year ending March 31, 2025 from the following: Opening Stock ₹50,000, Purchases ₹3,00,000, Sales ₹5,00,000, Closing Stock ₹80,000, Direct Expenses ₹20,000.",
+      "expected_answer": "Debit side: Opening Stock 50,000 + Purchases 3,00,000 + Direct Expenses 20,000 = 3,70,000. Credit side: Sales 5,00,000 + Closing Stock 80,000 = 5,80,000. Gross Profit = 5,80,000 - 3,70,000 = ₹2,10,000.",
+      "scoring_method": "llm_judge",
+      "difficulty": "medium",
+      "category": "financial_statements",
+      "rubric": "Must correctly compute Gross Profit of ₹2,10,000 with proper Trading Account format"
+    },
+    {
+      "id": "ca_005",
+      "domain": "ca_commerce",
+      "prompt_text": "What is Transfer Pricing? Why is it important in international taxation? Explain the arm's length principle.",
+      "expected_answer": "Transfer Pricing is the pricing of transactions between related enterprises/associated enterprises across borders. Important to prevent profit shifting to low-tax jurisdictions. Arm's Length Principle requires that transactions between related parties be priced as if they were between independent parties.",
+      "scoring_method": "llm_judge",
+      "difficulty": "hard",
+      "category": "taxation",
+      "rubric": "Must define transfer pricing, explain profit shifting concern, and define arm's length principle"
+    },
+    {
+      "id": "ca_006",
+      "domain": "ca_commerce",
+      "prompt_text": "Compute the Current Ratio and Quick Ratio from: Current Assets ₹5,00,000 (includes Inventory ₹1,50,000, Prepaid ₹25,000), Current Liabilities ₹2,50,000. Interpret the results.",
+      "expected_answer": "Current Ratio = 5,00,000 / 2,50,000 = 2:1 (healthy). Quick Ratio = (5,00,000 - 1,50,000 - 25,000) / 2,50,000 = 3,25,000 / 2,50,000 = 1.3:1 (adequate liquidity).",
+      "scoring_method": "llm_judge",
+      "difficulty": "medium",
+      "category": "financial_analysis",
+      "rubric": "Must compute Current Ratio as 2:1 and Quick Ratio as 1.3:1 with interpretation"
+    },
+    {
+      "id": "nlp_001",
+      "domain": "natural_language",
+      "prompt_text": "Summarize the following paragraph in exactly 2 sentences: 'Artificial intelligence has transformed numerous industries, from healthcare to finance. Machine learning algorithms can now analyze vast datasets to identify patterns that humans might miss. Natural language processing enables computers to understand and generate human language. These technologies continue to evolve rapidly, raising both excitement and ethical concerns.'",
+      "expected_answer": "AI technologies including machine learning and NLP have transformed industries like healthcare and finance by analyzing data and understanding language. Their rapid evolution brings both excitement and ethical challenges.",
+      "scoring_method": "llm_judge",
+      "difficulty": "medium",
+      "category": "summarization",
+      "rubric": "Must produce exactly 2 sentences that capture the main ideas: transformation, technology types, and ethical concerns"
+    },
+    {
+      "id": "nlp_002",
+      "domain": "natural_language",
+      "prompt_text": "Translate the following sentence to formal English: 'yo this app is lit, ngl the features r fire and the ui is mad clean'",
+      "expected_answer": "This application is excellent. The features are outstanding and the user interface is exceptionally clean and well-designed.",
+      "scoring_method": "llm_judge",
+      "difficulty": "medium",
+      "category": "style_transfer",
+      "rubric": "Must convert slang to formal English while preserving meaning about app quality, features, and UI"
+    },
+    {
+      "id": "nlp_003",
+      "domain": "natural_language",
+      "prompt_text": "Extract all named entities (Person, Organization, Location) from: 'Elon Musk announced that Tesla will open a new factory in Berlin, Germany. The European Commission welcomed the move.'",
+      "expected_answer": "Person: Elon Musk. Organization: Tesla, European Commission. Location: Berlin, Germany.",
+      "scoring_method": "llm_judge",
+      "difficulty": "easy",
+      "category": "ner",
+      "rubric": "Must correctly identify all 5 entities with correct type labels"
+    },
+    {
+      "id": "nlp_004",
+      "domain": "natural_language",
+      "prompt_text": "Paraphrase the following without changing the meaning: 'The committee unanimously decided to postpone the annual conference due to unforeseen logistical challenges.'",
+      "expected_answer": "Due to unexpected logistical issues, the committee agreed by consensus to delay the yearly conference.",
+      "scoring_method": "llm_judge",
+      "difficulty": "easy",
+      "category": "paraphrase",
+      "rubric": "Must preserve all key information: unanimous decision, postponement, annual conference, logistical reason"
+    },
+    {
+      "id": "nlp_005",
+      "domain": "natural_language",
+      "prompt_text": "Given the premise 'All birds can fly' and the statement 'Penguins are birds', what is the logical conclusion? Then explain why this syllogism is flawed in reality.",
+      "expected_answer": "Logical conclusion: Penguins can fly. However, this syllogism is flawed because the premise 'all birds can fly' is factually incorrect — penguins, ostriches, and other flightless birds cannot fly.",
+      "scoring_method": "llm_judge",
+      "difficulty": "medium",
+      "category": "reasoning",
+      "rubric": "Must state the logical conclusion AND explain why the premise is factually wrong"
+    },
+    {
+      "id": "nlp_006",
+      "domain": "natural_language",
+      "prompt_text": "Classify the intent of this user query: 'Can you help me cancel my subscription and get a refund for the last month?'",
+      "expected_answer": "Primary intent: subscription cancellation. Secondary intent: refund request. Category: customer service / account management.",
+      "scoring_method": "llm_judge",
+      "difficulty": "easy",
+      "category": "intent_classification",
+      "rubric": "Must identify both intents: cancellation and refund"
+    },
+    {
+      "id": "prod_001",
+      "domain": "product_reviews",
+      "prompt_text": "Classify the sentiment of this review: 'This product is absolutely amazing! Worth every penny.'",
+      "expected_answer": "positive",
+      "scoring_method": "keyword_match",
+      "difficulty": "easy",
+      "category": "positive",
+      "keywords": ["positive", "good", "excellent", "amazing", "great"]
+    },
+    {
+      "id": "prod_002",
+      "domain": "product_reviews",
+      "prompt_text": "Classify the sentiment of this review: 'Terrible quality, broke after one use. Complete waste of money.'",
+      "expected_answer": "negative",
+      "scoring_method": "keyword_match",
+      "difficulty": "easy",
+      "category": "negative",
+      "keywords": ["negative", "bad", "terrible", "awful", "poor"]
+    },
+    {
+      "id": "prod_003",
+      "domain": "product_reviews",
+      "prompt_text": "Classify the sentiment of this review: 'It's okay, nothing special. Does what it says but nothing more.'",
+      "expected_answer": "neutral",
+      "scoring_method": "keyword_match",
+      "difficulty": "medium",
+      "category": "neutral",
+      "keywords": ["neutral", "okay", "average", "mixed", "neither"]
+    },
+    {
+      "id": "prod_004",
+      "domain": "product_reviews",
+      "prompt_text": "Classify the sentiment of this review: 'I was hesitant at first but now I'm obsessed! Best purchase ever.'",
+      "expected_answer": "positive",
+      "scoring_method": "keyword_match",
+      "difficulty": "medium",
+      "category": "positive",
+      "keywords": ["positive", "obsessed", "best", "love", "amazing"]
+    },
+    {
+      "id": "social_001",
+      "domain": "social_media",
+      "prompt_text": "Classify the sentiment: 'Feeling so blessed today! Everything is falling into place.'",
+      "expected_answer": "positive",
+      "scoring_method": "keyword_match",
+      "difficulty": "easy",
+      "category": "positive",
+      "keywords": ["positive", "blessed", "happy", "excited", "love"]
+    },
+    {
+      "id": "social_002",
+      "domain": "social_media",
+      "prompt_text": "Classify the sentiment: 'Why does everything always go wrong? So frustrated right now.'",
+      "expected_answer": "negative",
+      "scoring_method": "keyword_match",
+      "difficulty": "easy",
+      "category": "negative",
+      "keywords": ["negative", "frustrated", "angry", "sad", "disappointed"]
+    }
+  ],
+  "metadata": {
+    "total_prompts": 32,
+    "domains": [
+      "clinical",
+      "legal",
+      "ca_commerce",
+      "natural_language",
+      "product_reviews",
+      "social_media"
+    ],
+    "domain_labels": {
+      "clinical": "Clinical & Medical",
+      "legal": "Legal & Jurisprudence",
+      "ca_commerce": "CA & Commerce",
+      "natural_language": "Natural Language Processing",
+      "product_reviews": "Product Reviews",
+      "social_media": "Social Media"
+    },
+    "prompts_per_domain": 6,
+    "scoring_methods": ["keyword_match", "llm_judge"],
+    "version": "2.0.0",
+    "description": "Multi-Domain Forensic Audit Prompts for LLM Regression Sentinel"
+  }
+}
