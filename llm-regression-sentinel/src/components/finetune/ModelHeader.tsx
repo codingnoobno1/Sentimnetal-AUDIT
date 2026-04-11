@@ -13,15 +13,16 @@ interface ModelHeaderProps {
   onSyncTrace: () => void;
   onToggleLab: () => void;
   onDownload: () => void;
+  onToggleFineTune?: () => void; // Support for the new MLOps suite
 }
 
 export default function ModelHeader({
   model, isLocal, isDownloading, downloadProgress, isSyncing, savedRecords,
-  onSyncTrace, onToggleLab, onDownload
+  onSyncTrace, onToggleLab, onDownload, onToggleFineTune
 }: ModelHeaderProps) {
   return (
     <div className={`p-10 border-l-[12px] flex flex-col gap-8 shadow-2xl relative overflow-hidden bg-white ${isLocal ? "border-indigo-blue" : "border-orange-red"}`}>
-      {/* Status Badges */}
+      {/* ... (Existing Status Badges) */}
       <div className="flex flex-wrap gap-3">
         {isDownloading && (
           <div className="flex items-center gap-2 px-4 py-2 bg-charcoal text-white text-[9px] font-black uppercase tracking-widest">
@@ -31,14 +32,14 @@ export default function ModelHeader({
         )}
         {isSyncing && (
           <div className="flex items-center gap-2 px-3 py-2 bg-indigo-blue text-white text-[9px] font-black uppercase tracking-widest">
-            <RefreshCw className="w-3 h-3 animate-spin" /> Syncing
+            <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Syncing
           </div>
         )}
         <div className="flex items-center gap-2 px-3 py-2 bg-white border border-zinc-100 text-charcoal text-[9px] font-black uppercase tracking-widest shadow-sm">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> Audits: <span className="text-indigo-blue">{savedRecords}</span>
         </div>
         <div className="flex items-center gap-2 px-3 py-2 bg-white border border-zinc-100 text-charcoal text-[9px] font-black uppercase tracking-widest shadow-sm">
-          <Database className="w-3.5 h-3.5 text-indigo-blue" /> MongoDB
+          <Database className="w-3.5 h-3.5 text-indigo-blue" /> MLOps Config
         </div>
       </div>
 
@@ -59,14 +60,22 @@ export default function ModelHeader({
 
         <div className="flex gap-3 flex-wrap">
           <button onClick={onSyncTrace} className="px-6 py-4 border border-zinc-200 text-[10px] font-black uppercase tracking-[0.15em] flex items-center gap-3 hover:bg-zinc-50 transition-all shadow-sm">
-            <History className="w-4 h-4 text-indigo-blue" /> Sync
+            <History className="w-4 h-4 text-indigo-blue" /> History
           </button>
+          
+          {isLocal && (
+            <button onClick={onToggleFineTune} className="px-6 py-4 border border-orange-red text-[10px] font-black uppercase tracking-[0.15em] flex items-center gap-3 hover:bg-orange-red/5 transition-all">
+              <Activity className="w-4 h-4 text-orange-red" /> Fine-Tune
+            </button>
+          )}
+
           <button onClick={onToggleLab} className="px-8 py-4 bg-charcoal text-white text-[10px] font-black uppercase tracking-[0.15em] flex items-center gap-3 hover:bg-orange-red transition-all shadow-xl">
-            <Activity className="w-4 h-4" /> Live Lab
+            <Activity className="w-4 h-4" /> Forensic Lab
           </button>
+          
           {!isLocal && (
             <button onClick={onDownload} className="px-6 py-4 border border-charcoal text-[10px] font-black uppercase tracking-[0.15em] flex items-center gap-3 hover:bg-zinc-50 transition-all">
-              <Download className="w-4 h-4" /> Initialize
+              <Download className="w-4 h-4" /> Download
             </button>
           )}
         </div>
