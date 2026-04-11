@@ -53,4 +53,7 @@ class LlmRepository {
   Future<StorageStats> getStorageStats() => _apiService.getStorageStats();
 
   Future<String> interactWithModel(String id, String prompt) => _apiService.interactWithModel(id, prompt);
+
+  Future<ForensicAudit> getForensicAudit(String input, String output, String modelId) => 
+      _apiService.getForensicAudit(input, output, modelId);
 }

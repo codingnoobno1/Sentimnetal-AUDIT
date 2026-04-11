@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../logic/inference/inference_bloc.dart';
+import 'model_analysis_screen.dart';
 
 class ModelDetailsScreen extends StatefulWidget {
   final String modelId;
@@ -84,10 +84,48 @@ class _ModelDetailsScreenState extends State<ModelDetailsScreen> {
                       ),
               ),
               if (state.status == InferenceStatus.loading) _buildThinkingIndicator(),
+              if (state.history.isNotEmpty && !state.history.last.isUser && state.status != InferenceStatus.loading) 
+                _buildAnalysisTrigger(state.history.last.text, state.history[state.history.length - 2].text),
               _buildInputArea(state),
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildAnalysisTrigger(String response, String prompt) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      color: Colors.white,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ModelAnalysisScreen(
+                modelId: widget.modelId,
+                input: prompt,
+                output: response,
+              ),
+            ),
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1A1A),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(LucideIcons.barChart2, size: 14, color: Colors.white),
+              const SizedBox(width: 8),
+              Text('ANALYZE TRACE', style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 1.5)),
+            ],
+          ),
+        ),
       ),
     );
   }

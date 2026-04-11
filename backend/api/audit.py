@@ -71,3 +71,21 @@ async def get_audit_result(audit_id: str, orchestrator: AuditOrchestrator = Depe
     if not result:
         raise HTTPException(status_code=404, detail="Audit result not found")
     return result
+
+@router.post("/evaluate")
+async def proxy_forensic_evaluation(request: dict):
+    """
+    FOR MOBILE SYNC: Proxies mobile evaluation requests to the Express Sentinel Judge (3020).
+    Allows the mobile app to use a single Ngrok tunnel for both inference and analysis.
+    """
+    import httpx
+    express_url = "http://localhost:3020/evaluate"
+    
+    try:
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            response = await client.post(express_url, json=request)
+            return response.json()
+    except Exception as e:
+        # Fallback if Express is down
+        print(f"DEBUG: Express node at 3020 is unreachable. {str(e)}")
+        raise HTTPException(status_code=503, detail="Forensic Judge node (3020) is offline.")

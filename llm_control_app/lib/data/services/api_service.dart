@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/hf_model.dart';
+import '../models/forensic_audit.dart';
 import '../models/job_model.dart';
 import '../models/prompt_model.dart';
 
@@ -129,5 +130,22 @@ class ApiService {
       return data['response'] as String;
     }
     throw Exception("Model interaction failure: ${res.statusCode}");
+  }
+
+  Future<ForensicAudit> getForensicAudit(String input, String output, String modelId) async {
+    final res = await _client.post(
+      Uri.parse("$baseUrl/api/audit/evaluate"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "input": input,
+        "output": output,
+        "model_id": modelId,
+        "result": true // Default for manual interaction
+      }),
+    );
+    if (res.statusCode == 200) {
+      return ForensicAudit.fromJson(jsonDecode(res.body));
+    }
+    throw Exception("Forensic evaluation failure: ${res.statusCode}");
   }
 }
