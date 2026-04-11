@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks
-from typing import List, Dict, Any
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
+from typing import List, Dict, Any, Optional
 import os
 from core.local_manager import LocalModelManager
+from api.audit import get_orchestrator
+from core.orchestrator import AuditOrchestrator
 
 router = APIRouter(prefix="/api/models", tags=["Local Models"])
 
@@ -40,6 +42,31 @@ async def download_model(model_id: str, background_tasks: BackgroundTasks):
         "progress": local_manager.get_progress(model_id),
         "message": f"Started background download for {model_id}."
     }
+
+@router.post("/interact")
+async def interact_with_model(
+    model_id: str,
+    prompt: str,
+    parameters: Optional[Dict[str, Any]] = None,
+    orchestrator: AuditOrchestrator = Depends(get_orchestrator)
+):
+    """
+    Direct prompt injection for mobile/mobile playground.
+    """
+    try:
+        response = await orchestrator.model_client.query_model(
+            model_id=model_id,
+            prompt=prompt,
+            parameters=parameters
+        )
+        return {
+            "model_id": model_id,
+            "prompt": prompt,
+            "response": response,
+            "status": "success"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Inference Failure: {str(e)}")
 
 @router.delete("/{model_id:path}")
 async def delete_model(model_id: str):

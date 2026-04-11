@@ -4,14 +4,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 # New Modular Imports
-from api import audit, test, health, hf, testing, local_models
+from api import audit, test, health, hf, testing, local_models, finetune
 
 load_dotenv()
 
 app = FastAPI(
     title="LLM Regression Sentinel - Modular Audit System",
     description="Refined architecture for forensic AI auditing and regression detection.",
-    version="2.0.0"
+    version="2.1.0"
 )
 
 # CORS Configuration
@@ -32,6 +32,20 @@ app.include_router(health.router)
 app.include_router(hf.router)
 app.include_router(testing.router)
 app.include_router(local_models.router)
+app.include_router(finetune.router)
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    Initializes background services on system launch.
+    """
+    from core.remote_sync import start_watchdog
+    from api.local_models import local_manager
+    import asyncio
+    
+    # Start the Remote Sync Watchdog as a non-blocking background task
+    asyncio.create_task(start_watchdog(local_manager))
+    print("PROMETHEUS: Remote Sync Watchdog initialized.")
 
 if __name__ == "__main__":
     import uvicorn
