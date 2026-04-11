@@ -120,19 +120,32 @@ class ApiService {
     throw Exception("Failed to sync storage health: ${res.statusCode}");
   }
 
-  Future<String> interactWithModel(String modelId, String prompt) async {
+  Future<Map<String, dynamic>> interactWithModel(String modelId, String prompt) async {
     final res = await _client.post(
       Uri.parse("$baseUrl/api/models/interact?model_id=${Uri.encodeComponent(modelId)}&prompt=${Uri.encodeComponent(prompt)}"),
       headers: {"Content-Type": "application/json"},
     );
     if (res.statusCode == 200) {
-      final data = jsonDecode(res.body);
-      return data['response'] as String;
+      return jsonDecode(res.body);
     }
     throw Exception("Model interaction failure: ${res.statusCode}");
   }
 
+  Future<ForensicAudit?> getAuditStatus(String auditId) async {
+    final res = await _client.get(Uri.parse("$baseUrl/api/audit/status/$auditId"));
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      if (data['status'] == 'completed') {
+        return ForensicAudit.fromJson(data);
+      }
+      return null; // Still processing or queued
+    }
+    throw Exception("Audit status check failure: ${res.statusCode}");
+  }
+
   Future<ForensicAudit> getForensicAudit(String input, String output, String modelId) async {
+    // Note: This method is now legacy as we move to async polling.
+    // However, we keep it for direct audit triggers from the UI.
     final res = await _client.post(
       Uri.parse("$baseUrl/api/audit/evaluate"),
       headers: {"Content-Type": "application/json"},
@@ -140,7 +153,7 @@ class ApiService {
         "input": input,
         "output": output,
         "model_id": modelId,
-        "result": true // Default for manual interaction
+        "result": true
       }),
     );
     if (res.statusCode == 200) {

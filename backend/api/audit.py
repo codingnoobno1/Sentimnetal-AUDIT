@@ -4,7 +4,7 @@ import os
 from schemas.models import AuditRequest, AuditRun
 from core.orchestrator import AuditOrchestrator
 
-router = APIRouter(prefix="/audit", tags=["Audit"])
+router = APIRouter(prefix="/api/audit", tags=["Audit"])
 
 # Global orchestrator instance
 _orchestrator: Optional[AuditOrchestrator] = None

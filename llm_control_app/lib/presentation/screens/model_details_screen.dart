@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -85,7 +86,7 @@ class _ModelDetailsScreenState extends State<ModelDetailsScreen> {
               ),
               if (state.status == InferenceStatus.loading) _buildThinkingIndicator(),
               if (state.history.isNotEmpty && !state.history.last.isUser && state.status != InferenceStatus.loading) 
-                _buildAnalysisTrigger(state.history.last.text, state.history[state.history.length - 2].text),
+                _buildAnalysisTrigger(state.history.last.text, state.history[state.history.length - 2].text, state.history.last.auditId),
               _buildInputArea(state),
             ],
           );
@@ -94,7 +95,7 @@ class _ModelDetailsScreenState extends State<ModelDetailsScreen> {
     );
   }
 
-  Widget _buildAnalysisTrigger(String response, String prompt) {
+  Widget _buildAnalysisTrigger(String response, String prompt, String? auditId) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       color: Colors.white,
@@ -107,6 +108,7 @@ class _ModelDetailsScreenState extends State<ModelDetailsScreen> {
                 modelId: widget.modelId,
                 input: prompt,
                 output: response,
+                auditId: auditId,
               ),
             ),
           );

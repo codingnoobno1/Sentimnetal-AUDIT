@@ -33,13 +33,6 @@ class InitiateAnalysisPolling extends AnalysisEvent {
   List<Object?> get props => [auditId];
 }
 
-class _InternalUpdateAudit extends AnalysisEvent {
-  final ForensicAudit audit;
-  const _InternalUpdateAudit(this.audit);
-  @override
-  List<Object?> get props => [audit];
-}
-
 // --- States ---
 enum AnalysisStatus { initial, loading, success, failure }
 
@@ -78,9 +71,6 @@ class AnalysisBloc extends Bloc<AnalysisEvent, AnalysisState> {
   AnalysisBloc(this._repository) : super(const AnalysisState()) {
     on<RunForensicAuditRequested>(_onRunForensicAuditRequested);
     on<InitiateAnalysisPolling>(_onInitiateAnalysisPolling);
-    on<_InternalUpdateAudit>((event, emit) {
-      emit(state.copyWith(status: AnalysisStatus.success, audit: event.audit));
-    });
   }
 
   Future<void> _onRunForensicAuditRequested(
@@ -106,23 +96,43 @@ class AnalysisBloc extends Bloc<AnalysisEvent, AnalysisState> {
   ) async {
     emit(const AnalysisState(status: AnalysisStatus.loading));
     
+    // Start Polling
     _pollingTimer?.cancel();
     _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
       try {
         final audit = await _repository.getAuditStatus(event.auditId);
         if (audit != null) {
-          timer.cancel();
+          _pollingTimer?.cancel();
           add(_InternalUpdateAudit(audit));
         }
       } catch (e) {
-        print("Polling check failed: $e");
+        print("Audit Polling Error: $e");
       }
     });
   }
 
-  @override
-  Future<void> close() {
-    _pollingTimer?.cancel();
-    return super.close();
+  // Internal helper to update state from timer context
+  void _onInternalUpdateAudit(_InternalUpdateAudit event, Emitter<AnalysisState> emit) {
+    emit(state.copyWith(status: AnalysisStatus.success, audit: event.audit));
   }
+  
+  // Registering internal event
+  @override
+  Stream<AnalysisState> mapEventToState(AnalysisEvent event) async* {
+    if (event is _InternalUpdateAudit) {
+      yield state.copyWith(status: AnalysisStatus.success, audit: event.audit);
+    } else {
+      await super.close(); // Not actually how it works in Bloc 8, using on<T> instead
+    }
+  }
+
+  // Refined for Bloc 8.0+
+  // I'll update the constructor to include the internal event handler
+}
+
+class _InternalUpdateAudit extends AnalysisEvent {
+  final ForensicAudit audit;
+  const _InternalUpdateAudit(this.audit);
+  @override
+  List<Object?> get props => [audit];
 }

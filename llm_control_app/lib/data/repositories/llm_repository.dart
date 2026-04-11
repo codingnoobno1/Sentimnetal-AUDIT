@@ -2,6 +2,7 @@ import '../models/hf_model.dart';
 import '../models/job_model.dart';
 import '../models/prompt_model.dart';
 import '../models/stats_model.dart';
+import '../models/forensic_audit.dart';
 import '../services/api_service.dart';
 
 class LlmRepository {
@@ -52,7 +53,9 @@ class LlmRepository {
 
   Future<StorageStats> getStorageStats() => _apiService.getStorageStats();
 
-  Future<String> interactWithModel(String id, String prompt) => _apiService.interactWithModel(id, prompt);
+  Future<Map<String, dynamic>> interactWithModel(String id, String prompt) => _apiService.interactWithModel(id, prompt);
+
+  Future<ForensicAudit?> getAuditStatus(String auditId) => _apiService.getAuditStatus(auditId);
 
   Future<ForensicAudit> getForensicAudit(String input, String output, String modelId) => 
       _apiService.getForensicAudit(input, output, modelId);

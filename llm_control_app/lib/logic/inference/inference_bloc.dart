@@ -6,9 +6,10 @@ import '../../data/repositories/llm_repository.dart';
 class ChatMessage {
   final String text;
   final bool isUser;
+  final String? auditId;
   final DateTime timestamp;
 
-  ChatMessage({required this.text, required this.isUser, DateTime? timestamp})
+  ChatMessage({required this.text, required this.isUser, this.auditId, DateTime? timestamp})
       : timestamp = timestamp ?? DateTime.now();
 }
 
@@ -79,7 +80,11 @@ class InferenceBloc extends Bloc<InferenceEvent, InferenceState> {
     
     try {
       final response = await _repository.interactWithModel(event.modelId, event.prompt);
-      final botMessage = ChatMessage(text: response, isUser: false);
+      final botMessage = ChatMessage(
+        text: response['response'] as String, 
+        isUser: false,
+        auditId: response['audit_id'] as String?,
+      );
       
       emit(state.copyWith(
         status: InferenceStatus.success,

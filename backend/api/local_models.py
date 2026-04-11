@@ -52,17 +52,41 @@ async def interact_with_model(
 ):
     """
     Direct prompt injection for mobile/mobile playground.
+    Automatically queues an asynchronous forensic audit.
     """
+    import time
+    from core.db import db_manager
+    
     try:
         response = await orchestrator.model_client.query_model(
             model_id=model_id,
             prompt=prompt,
             parameters=parameters
         )
+        
+        # QUEUE AUDIT FOR EXPRESS JUDGE (3020) - WITH FAILSAFE
+        audit_id = None
+        try:
+            audit_entry = {
+                "model_id": model_id,
+                "input": prompt,
+                "output": response,
+                "status": "queued",
+                "timestamp": time.time(),
+                "result_status": "true"
+            }
+            result = await db_manager.audit_results.insert_one(audit_entry)
+            audit_id = str(result.inserted_id)
+            print(f"📡 [Gateway] Forensic Audit Queued: {audit_id}")
+        except Exception as mongo_err:
+            print(f"⚠️ [Gateway] MongoDB Queuing Failed: {str(mongo_err)}")
+            print("🚀 Chat proceeding in standalone mode (No Forensic Analysis available)")
+
         return {
             "model_id": model_id,
             "prompt": prompt,
             "response": response,
+            "audit_id": audit_id,
             "status": "success"
         }
     except Exception as e:
