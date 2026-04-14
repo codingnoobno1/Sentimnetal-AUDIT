@@ -64,19 +64,20 @@ class LlmRepository {
   /// Centralized intent handler for routing commands/prompts
   Future<dynamic> handleIntent(String text) async {
     final intent = VoiceCommandProcessor.detectIntent(text);
+    final query = VoiceCommandProcessor.extractQuery(text);
 
     switch (intent) {
       case VoiceIntent.checkStorage:
         return await getStorageStats();
 
+      case VoiceIntent.listModels:
+        return await getLocalModels();
+
+      case VoiceIntent.searchModels:
+        return await searchHuggingFace(query);
+
       case VoiceIntent.downloadModel:
-        // Simple extraction logic for demonstration
-        final words = text.toLowerCase().split(' ');
-        String modelId = "llama-3-8b-instruct"; // Default fallback
-        if (words.isNotEmpty) {
-          modelId = words.last; 
-        }
-        return await triggerDownload(modelId);
+        return await triggerDownload(query);
 
       case VoiceIntent.chat:
       default:
