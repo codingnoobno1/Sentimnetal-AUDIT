@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import '../../logic/fine_tune/fine_tune_bloc.dart';
-import '../../core/theme.dart';
+import 'package:llm_control_app/logic/fine_tune/fine_tune_bloc.dart';
+import 'package:llm_control_app/core/theme.dart';
+import 'package:llm_control_app/data/services/voice_service.dart';
+import 'package:llm_control_app/logic/utils/voice_command_processor.dart';
 
 class FineTuneScreen extends StatefulWidget {
   const FineTuneScreen({super.key});
@@ -18,6 +20,45 @@ class _FineTuneScreenState extends State<FineTuneScreen> {
   int _epochs = 3;
   double _dropout = 0.1;
   bool _isClawOpen = false;
+  final VoiceService _voiceService = VoiceService();
+  final TextEditingController _notesController = TextEditingController();
+  bool _isListening = false;
+  late VoiceCommandProcessor _commandProcessor;
+
+  @override
+  void initState() {
+    super.initState();
+    _commandProcessor = VoiceCommandProcessor(
+      commands: {
+        'open claw': () {
+          setState(() => _isClawOpen = true);
+          _voiceService.speak("Opening configuration claw.");
+        },
+        'close claw': () {
+          setState(() => _isClawOpen = false);
+          _voiceService.speak("Closing configuration claw.");
+        },
+        'start training': () {
+          if (_isClawOpen) {
+            _submitJob();
+          } else {
+            _voiceService.speak("Please open the claw first to verify settings.");
+          }
+        },
+      },
+    );
+  }
+
+  void _submitJob() {
+    context.read<FineTuneBloc>().add(SubmitFineTune(
+      datasetId: _selectedDataset,
+      params: {
+        'learning_rate': _learningRate,
+        'epochs': _epochs,
+        'dropout': _dropout,
+      },
+    ));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -174,6 +215,12 @@ class _FineTuneScreenState extends State<FineTuneScreen> {
                 0.5,
                 (val) => setState(() => _dropout = val),
               ),
+              const SizedBox(height: 24),
+              _buildVoiceTextField(
+                'Training Session Notes',
+                'Describe the objective of this fine-tuning run...',
+                (text) => setState(() => _notesController.text = text),
+              ),
               const SizedBox(height: 48),
               SizedBox(
                 width: double.infinity,
@@ -280,6 +327,66 @@ class _FineTuneScreenState extends State<FineTuneScreen> {
           max: max,
           divisions: (max - min).toInt(),
           onChanged: onChanged,
+        ),
+      ],
+    );
+  }
+  Widget _buildVoiceTextField(String label, String hint, Function(String) onResult) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTheme.lightTheme.textTheme.bodySmall),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _notesController,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  hintText: hint,
+                  hintStyle: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                  filled: true,
+                  fillColor: AppTheme.backgroundLight,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: _isListening ? Colors.red.withOpacity(0.1) : AppTheme.backgroundLight,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: IconButton(
+                icon: Icon(
+                  LucideIcons.mic,
+                  color: _isListening ? Colors.red : AppTheme.textSecondary,
+                  size: 20,
+                ),
+                onPressed: () async {
+                  if (_isListening) {
+                    await _voiceService.stopListening();
+                    setState(() => _isListening = false);
+                  } else {
+                    final started = await _voiceService.startListening((text) {
+                      setState(() {
+                        _notesController.text = text;
+                      });
+                      // Check for commands
+                      _commandProcessor.process(text);
+                    });
+                    if (started) {
+                      setState(() => _isListening = true);
+                    }
+                  }
+                },
+              ),
+            ),
+          ],
         ),
       ],
     );

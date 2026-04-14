@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme.dart';
 import '../../../data/models/prompt_model.dart';
+import 'package:llm_control_app/data/services/voice_service.dart';
 
 class ChatBubble extends StatelessWidget {
   final ChatMessage message;
@@ -43,13 +44,32 @@ class ChatBubble extends StatelessWidget {
                         ),
                       ],
               ),
-              child: Text(
-                message.content,
-                style: TextStyle(
-                  color: isUser ? Colors.white : AppTheme.textDark,
-                  fontSize: 14,
-                  height: 1.5,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    message.content,
+                    style: TextStyle(
+                      color: isUser ? Colors.white : AppTheme.textDark,
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
+                  ),
+                  if (!isUser) ...[
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: GestureDetector(
+                        onTap: () => VoiceService().speak(message.content),
+                        child: Icon(
+                          Icons.volume_up,
+                          size: 16,
+                          color: AppTheme.textSecondary.withOpacity(0.5),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ),

@@ -3,7 +3,7 @@
 This document provides the definitive mapping between the Flutter Mobile App and the hybrid Backend Node (FastAPI + Node.js).
 
 ## 🌍 Base Configuration
--   **Ngrok Host**: `https://untutelary-francisco-overtrustfully.ngrok-free.dev`
+-   **Ngrok Host**: `http://10.0.2.2:5000`
 -   **Primary Gateway**: FastAPI (Port 5000)
 -   **Judge Node**: Express (Port 3020)
 

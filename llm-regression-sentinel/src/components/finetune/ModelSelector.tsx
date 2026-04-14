@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Loader2, Maximize2 } from "lucide-react";
+import { Loader2, Maximize2, Brain, Layers, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BACKEND_URL } from "@/src/lib/apiConfig";
 
 // --- Component Imports (20+ modular components) ---
-import type { HFModel, TestResult } from "./types";
+import type { TestResult } from "./types";
+import { HfModel } from "@/src/models";
 import SearchBar from "./SearchBar";
 import PresetDropdown from "./PresetDropdown";
 import ModelCard from "./ModelCard";
@@ -29,13 +30,14 @@ import ParameterGauges from "./ParameterGauges";
 import FullscreenWrapper from "./FullscreenWrapper";
 import TestMetricsPanel from "./TestMetricsPanel";
 import DomainSelector from "./DomainSelector";
+import ForensicIntelligenceGrid from "./ForensicIntelligenceGrid";
 
 // --- Main Orchestrator Component ---
 export default function ModelSelector() {
   const [query, setQuery] = useState("");
-  const [models, setModels] = useState<HFModel[]>([]);
+  const [models, setModels] = useState<HfModel[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<HFModel | null>(null);
+  const [selectedModel, setSelectedModel] = useState<HfModel | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [localModels, setLocalModels] = useState<string[]>([]);
@@ -51,6 +53,7 @@ export default function ModelSelector() {
   const [savedRecords, setSavedRecords] = useState(0);
   const [selectedDomain, setSelectedDomain] = useState("all");
   const [testResult, setTestResult] = useState<TestResult | null>(null);
+  const [fullscreenTab, setFullscreenTab] = useState<"analytics" | "logs">("analytics");
   const trailEndRef = useRef<HTMLDivElement>(null);
 
   // --- Fetch callbacks ---
@@ -94,11 +97,15 @@ export default function ModelSelector() {
             metrics: { accuracy: 0, avg_latency_ms: 0, total_duration_s: 0, throughput_qps: 0, success_rate: 100 },
             trials: history.map((t: any) => ({
               ...t,
-              specialized_expertise: t.forensic_eval?.specialized_expertise || t.specialized_expertise,
-              technical_tips: t.forensic_eval?.technical_tips || t.technical_tips,
+              forensic_eval: t.forensic_trace || t.forensic_eval, // Support both Python and Express judge keys
+              specialized_expertise: t.specialized_expertise || t.forensic_eval?.specialized_expertise,
+              technical_tips: t.technical_tips || t.forensic_eval?.technical_tips,
             })),
           });
+          setSavedRecords(history.length);
           setShowTest(true);
+        } else {
+          setSavedRecords(0);
         }
       }
     } catch { console.error("History sync failed"); } finally { setIsSyncing(false); }
@@ -121,7 +128,7 @@ export default function ModelSelector() {
       const r = await fetch(`${BACKEND_URL}/api/hf/model/${encodeURIComponent(modelId)}`, { headers: { "ngrok-skip-browser-warning": "69420" } });
       if (!r.ok) throw new Error("Failed to fetch model details");
       const d = await r.json();
-      const model: HFModel = { id: d.id || d.modelId, author: d.author, downloads: d.downloads || 0, likes: d.likes || 0, lastModified: d.lastModified, tags: d.tags || [], pipeline_tag: d.pipeline_tag, isPrivate: d.private || false };
+      const model: HfModel = { id: d.id || d.modelId, author: d.author, downloads: d.downloads || 0, likes: d.likes || 0, lastModified: d.lastModified, tags: d.tags || [], pipeline_tag: d.pipeline_tag, isPrivate: d.private || false };
       setSelectedModel(model); setModels([]); setQuery(""); setShowTest(false); setTestResult(null);
       fetchAuditHistory(model.id); fetchIntegrity();
     } catch (err: any) { setError(`Model Initialization Failure: ${err.message}`); } finally { setIsLoading(false); }
@@ -136,19 +143,37 @@ export default function ModelSelector() {
     } catch { setIsDownloading(false); }
   };
 
-  const runGeminiAudit = async (trialId: string, prompt: string, response: string, status: string) => {
+  const runGeminiAudit = async (trialId: string, prompt: string, response: string, status: string, expectedAnswer?: string) => {
     if (!selectedModel) return;
     try {
-      const r = await fetch(`${BACKEND_URL}/api/testing/evaluate-gemini?prompt_text=${encodeURIComponent(prompt)}&response_text=${encodeURIComponent(response)}&result_status=${status}&model_id=${encodeURIComponent(selectedModel.id)}`, { method: "POST" });
-      if (r.ok) {
-        const auditData = await r.json();
-        setTestResult((prev) => {
-          if (!prev) return prev;
-          return { ...prev, trials: prev.trials.map((t) => t.prompt_id === trialId ? { ...t, forensic_eval: auditData.forensic_trace, specialized_expertise: auditData.specialized_expertise, technical_tips: auditData.technical_tips } : t) };
-        });
-        setSavedRecords((p) => p + 1);
+      const url = `${BACKEND_URL}/api/audit/evaluate`;
+      const r = await fetch(url, { 
+        method: "POST", 
+        headers: { 
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "69420" 
+        },
+        body: JSON.stringify({
+          input: prompt,
+          output: response,
+          result: status === "success",
+          model_id: selectedModel.id
+        })
+      });
+      
+      if (!r.ok) {
+        const err = await r.json();
+        setError(err.detail || "Forensic Audit failed");
       }
-    } catch { console.error("Gemini Audit failed"); }
+      
+      // Mongo-First Sync: Always re-fetch from database to ensure truth
+      await fetchAuditHistory(selectedModel.id);
+      await fetchIntegrity();
+      
+    } catch { 
+      console.error("Gemini Audit failed");
+      setError("Connectivity failure during audit. Check if the Judge node is online.");
+    }
   };
 
   const runScalabilityTest = async () => {
@@ -193,6 +218,13 @@ export default function ModelSelector() {
           </div>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
+          <button 
+            onClick={() => selectedModel && fetchAuditHistory(selectedModel.id)} 
+            className={`h-10 px-4 border border-zinc-200 text-zinc-400 text-[9px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-zinc-50 transition-all ${isSyncing ? "opacity-50" : ""}`}
+            disabled={isSyncing}
+          >
+            <RefreshCw className={`w-3 h-3 ${isSyncing ? "animate-spin" : ""}`} /> Sync Mongo
+          </button>
           <ScaleSelector scale={testScale} onScaleChange={setTestScale} onRun={runScalabilityTest} isTesting={isTesting} />
           {!isFullscreen && (
             <button onClick={() => setIsFullscreen(true)} className="h-10 px-4 bg-zinc-100 text-zinc-500 text-[9px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-zinc-200 transition-all">
@@ -216,8 +248,8 @@ export default function ModelSelector() {
           <motion.div key={idx} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
             className="bg-white border border-zinc-100 shadow-sm p-8 space-y-8"
           >
-            <TrialHeader index={idx} promptId={trial.prompt_id} latency={trial.latency} onAudit={() => runGeminiAudit(trial.prompt_id, trial.prompt_text, trial.response, trial.status)} />
-            <PromptResponsePair prompt={trial.prompt_text} response={trial.response} />
+            <TrialHeader index={idx} promptId={trial.prompt_id} latency={trial.latency} onAudit={() => runGeminiAudit(trial.prompt_id, trial.prompt_text, trial.response, trial.status, trial.expected_answer)} />
+            <PromptResponsePair prompt={trial.prompt_text} response={trial.response} expectedAnswer={trial.expected_answer} />
 
             {/* Forensic Analysis Section */}
             {trial.forensic_eval && (
@@ -293,7 +325,38 @@ export default function ModelSelector() {
                     onClose={() => setIsFullscreen(false)}
                     title={selectedModel.id.split("/").pop()}
                   >
-                    {labContent}
+                    {isFullscreen ? (
+                      <div className="space-y-12">
+                        {/* Fullscreen Tabs */}
+                        <div className="flex items-center gap-1 border-b border-zinc-100 mb-8">
+                          {[
+                            { id: "analytics", label: "Intelligence Dashboard", icon: Brain },
+                            { id: "logs", label: "Raw Forensic Logs", icon: Layers }
+                          ].map((tab) => (
+                            <button
+                              key={tab.id}
+                              onClick={() => setFullscreenTab(tab.id as any)}
+                              className={`px-8 py-4 text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all border-b-2 ${
+                                fullscreenTab === tab.id 
+                                  ? "border-indigo-blue text-charcoal bg-indigo-blue/5" 
+                                  : "border-transparent text-zinc-400 hover:text-zinc-600"
+                              }`}
+                            >
+                              <tab.icon className="w-3 h-3" />
+                              {tab.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        {fullscreenTab === "analytics" ? (
+                          <ForensicIntelligenceGrid modelId={selectedModel.id} />
+                        ) : (
+                          labContent
+                        )}
+                      </div>
+                    ) : (
+                      labContent
+                    )}
                   </FullscreenWrapper>
                 </motion.div>
               )}

@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 # New Modular Imports
-from api import audit, test, health, hf, testing, local_models, finetune, audit_status
+from api import audit, test, health, hf, testing, local_models, finetune, audit_status, chat
 
 load_dotenv()
 
@@ -34,6 +34,7 @@ app.include_router(testing.router)
 app.include_router(local_models.router)
 app.include_router(finetune.router)
 app.include_router(audit_status.router)
+app.include_router(chat.router)
 
 @app.on_event("startup")
 async def startup_event():

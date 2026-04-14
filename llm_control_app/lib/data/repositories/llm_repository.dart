@@ -4,6 +4,7 @@ import '../models/prompt_model.dart';
 import '../models/stats_model.dart';
 import '../models/forensic_audit.dart';
 import '../services/api_service.dart';
+import '../../logic/utils/voice_command_processor.dart';
 
 class LlmRepository {
   final ApiService _apiService;
@@ -59,4 +60,27 @@ class LlmRepository {
 
   Future<ForensicAudit> getForensicAudit(String input, String output, String modelId) => 
       _apiService.getForensicAudit(input, output, modelId);
+
+  /// Centralized intent handler for routing commands/prompts
+  Future<dynamic> handleIntent(String text) async {
+    final intent = VoiceCommandProcessor.detectIntent(text);
+
+    switch (intent) {
+      case VoiceIntent.checkStorage:
+        return await getStorageStats();
+
+      case VoiceIntent.downloadModel:
+        // Simple extraction logic for demonstration
+        final words = text.toLowerCase().split(' ');
+        String modelId = "llama-3-8b-instruct"; // Default fallback
+        if (words.isNotEmpty) {
+          modelId = words.last; 
+        }
+        return await triggerDownload(modelId);
+
+      case VoiceIntent.chat:
+      default:
+        return await sendPrompt(text);
+    }
+  }
 }

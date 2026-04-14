@@ -1,10 +1,10 @@
 "use client";
 import React from "react";
 import { ShieldCheck, Database, Loader2, RefreshCw, Download, History, Activity } from "lucide-react";
-import type { HFModel } from "./types";
+import { HfModel } from "@/src/models";
 
 interface ModelHeaderProps {
-  model: HFModel;
+  model: HfModel;
   isLocal: boolean;
   isDownloading: boolean;
   downloadProgress: number;

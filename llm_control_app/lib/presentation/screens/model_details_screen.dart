@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../logic/inference/inference_bloc.dart';
 import 'model_analysis_screen.dart';
+import '../../data/services/voice_service.dart';
 
 class ModelDetailsScreen extends StatefulWidget {
   final String modelId;
@@ -17,6 +18,8 @@ class ModelDetailsScreen extends StatefulWidget {
 class _ModelDetailsScreenState extends State<ModelDetailsScreen> {
   final TextEditingController _promptController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final VoiceService _voiceService = VoiceService();
+  bool _isListening = false;
 
   @override
   void dispose() {
@@ -218,6 +221,35 @@ class _ModelDetailsScreenState extends State<ModelDetailsScreen> {
                 ),
                 style: GoogleFonts.inter(fontSize: 14),
               ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: _isListening ? Colors.red.withOpacity(0.1) : const Color(0xFFF8F8F8),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: IconButton(
+              icon: Icon(
+                _isListening ? LucideIcons.mic : LucideIcons.mic,
+                color: _isListening ? Colors.red : Colors.black26,
+                size: 20,
+              ),
+              onPressed: isLoading ? null : () async {
+                if (_isListening) {
+                  await _voiceService.stopListening();
+                  setState(() => _isListening = false);
+                } else {
+                  final started = await _voiceService.startListening((text) {
+                    setState(() {
+                      _promptController.text = text;
+                    });
+                  });
+                  if (started) {
+                    setState(() => _isListening = true);
+                  }
+                }
+              },
             ),
           ),
           const SizedBox(width: 12),

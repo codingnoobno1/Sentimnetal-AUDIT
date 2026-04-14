@@ -26,6 +26,152 @@ def get_tools():
         raise HTTPException(status_code=500, detail="HF_TOKEN not set")
     return ModelClient(hf_token), CapabilityEvaluator(groq_api_key)
 
+@router.get("/integrity")
+async def check_system_integrity():
+    """
+    Returns the total count of forensic audits stored in the database.
+    """
+    try:
+        count = await audit_history.count_documents({})
+        return {"total_forensic_audits": count}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/history/{model_id:path}")
+async def get_model_history(model_id: str):
+    """
+    Fetches historical audit results for a specific model.
+    """
+    try:
+        cursor = audit_history.find({"model_id": model_id}).sort("timestamp", -1)
+        history = []
+        async for doc in cursor:
+            doc["_id"] = str(doc["_id"])
+            history.append(doc)
+        return history
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/evaluate-gemini")
+async def evaluate_gemini(
+    prompt_text: str,
+    response_text: str,
+    result_status: str,
+    model_id: str,
+    expected_answer: Optional[str] = None,
+    tools: tuple = Depends(get_tools)
+):
+    """
+    FOR FRONTEND SYNC: Runs a forensic audit using the Prometheus evaluator.
+    """
+    _, evaluator = tools
+    
+    try:
+        # Construct a prompt object similar to what process_single_prompt uses
+        prompt_obj = {
+            "prompt_text": prompt_text, 
+            "id": "manual-audit",
+            "expected_answer": expected_answer or ""
+        }
+        
+        # Run evaluation
+        eval_res = await evaluator.evaluate(prompt_obj, response_text, response_text)
+        
+        # Save results
+        audit_doc = {
+            "timestamp": time.time(),
+            "model_id": model_id,
+            "status": result_status,
+            "input": prompt_text,
+            "expected_answer": expected_answer or "",
+            "output": response_text,
+            "score": eval_res.get("ft_score", 0),
+            "forensic_eval": eval_res.get("forensic_trace", eval_res), # Fallback if forensic_trace isn't nested
+            "specialized_expertise": eval_res.get("specialized_expertise"),
+            "technical_tips": eval_res.get("technical_tips")
+        }
+        
+        await audit_history.insert_one(audit_doc)
+        return audit_doc
+        
+    except Exception as e:
+        err_str = str(e)
+        if "api_key" in err_str.lower() or "401" in err_str:
+            raise HTTPException(status_code=401, detail="Audit Engine Warning: Invalid or missing GROQ_API_KEY. Forensic analysis skipped.")
+        if "rate_limit" in err_str.lower() or "429" in err_str:
+            raise HTTPException(status_code=429, detail="Audit Engine Busy: Groq rate limit exceeded.")
+        raise HTTPException(status_code=500, detail=f"Auditing Internal Error: {err_str}")
+
+@router.get("/aggregate/{model_id:path}")
+async def get_model_aggregate_stats(model_id: str):
+    """
+    PROMETHEUS SYNC: Computes institution-grade analytics from MongoDB records.
+    """
+    try:
+        # Pipeline for domain-based aggregation
+        pipeline = [
+            {"$match": {"model_id": model_id}},
+            {"$group": {
+                "_id": "$domain",
+                "avg_score": {"$avg": "$score"},
+                "total_audits": {"$count": {}},
+                "latest_timestamp": {"$max": "$timestamp"}
+            }},
+            {"$sort": {"avg_score": -1}}
+        ]
+        
+        domain_stats = []
+        cursor = audit_history.aggregate(pipeline)
+        async for doc in cursor:
+            avg_score = doc.get("avg_score")
+            domain_stats.append({
+                "domain": doc["_id"],
+                "avg_score": round(avg_score, 2) if avg_score is not None else 0,
+                "total_audits": doc["total_audits"],
+                "last_active": doc["latest_timestamp"]
+            })
+            
+        # Pipeline for global forensic parameters (Radar data)
+        forensic_pipeline = [
+            {"$match": {"model_id": model_id, "forensic_eval": {"$exists": True}}},
+            {"$group": {
+                "_id": None,
+                "avg_logic": {"$avg": "$forensic_eval.logic.score"},
+                "avg_hallucination": {"$avg": "$forensic_eval.hallucination.score"},
+                "avg_safety": {"$avg": "$forensic_eval.safety.score"},
+                "avg_instruction": {"$avg": "$forensic_eval.instruction_following.score"},
+                "avg_arithmetic": {"$avg": "$forensic_eval.arithmetic.score"}
+            }}
+        ]
+        
+        forensic_avg = {
+            "avg_logic": 0, "avg_hallucination": 0, "avg_safety": 0, 
+            "avg_instruction": 0, "avg_arithmetic": 0
+        }
+        cursor = audit_history.aggregate(forensic_pipeline)
+        async for doc in cursor:
+            forensic_avg = {k: round(v, 2) if v is not None else 0 for k, v in doc.items() if k != "_id"}
+            
+        # Recent timeline (last 20 checks)
+        timeline = []
+        cursor = audit_history.find({"model_id": model_id}).sort("timestamp", -1).limit(20)
+        async for doc in cursor:
+            timeline.append({
+                "timestamp": doc["timestamp"],
+                "score": doc.get("score", 0),
+                "domain": doc.get("domain", "unknown")
+            })
+            
+        return {
+            "model_id": model_id,
+            "domains": domain_stats,
+            "forensic_parameters": forensic_avg,
+            "timeline": timeline[::-1], # Chronological order
+            "total_records": await audit_history.count_documents({"model_id": model_id})
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/domains")
 async def get_available_domains():
     prompts_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "prompts.json")
@@ -171,11 +317,14 @@ async def process_single_prompt(
             "domain": prompt.get("domain", "default"),
             "score": eval_res["ft_score"],
             "input": prompt["prompt_text"],
+            "expected_answer": prompt.get("expected_answer", ""),
             "output": response
         })
 
         return {
             "prompt_id": prompt["id"],
+            "prompt_text": prompt["prompt_text"],
+            "expected_answer": prompt.get("expected_answer", ""),
             "response": response,
             "score": eval_res["ft_score"],
             "correct": eval_res["ft_correct"],

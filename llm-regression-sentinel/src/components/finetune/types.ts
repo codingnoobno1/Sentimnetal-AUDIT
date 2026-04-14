@@ -44,6 +44,7 @@ export interface TestTrial {
   prompt_id: string;
   metadata?: any;
   prompt_text: string;
+  expected_answer?: string;
   response: string;
   latency: number;
   score: number;

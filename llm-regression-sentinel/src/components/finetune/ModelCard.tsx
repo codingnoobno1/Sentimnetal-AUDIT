@@ -2,10 +2,10 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Globe, Database, Heart, Download as DLIcon } from "lucide-react";
-import type { HFModel } from "./types";
+import { HfModel } from "@/src/models";
 
 interface ModelCardProps {
-  model: HFModel;
+  model: HfModel;
   onClick: () => void;
   isLocal: boolean;
 }

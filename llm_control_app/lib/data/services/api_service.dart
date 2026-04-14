@@ -6,7 +6,11 @@ import '../models/job_model.dart';
 import '../models/prompt_model.dart';
 
 class ApiService {
-  static const String baseUrl = "https://untutelary-francisco-overtrustfully.ngrok-free.dev";
+  static const bool _useNgrok = true; // TOGGLE THIS: true for ngrok, false for local emulator
+  static const String _localUrl = "http://10.0.2.2:5000";
+  static const String _ngrokUrl = "https://untutelary-francisco-overtrustfully.ngrok-free.dev";
+
+  static String get baseUrl => _useNgrok ? _ngrokUrl : _localUrl;
 
   final http.Client _client;
 

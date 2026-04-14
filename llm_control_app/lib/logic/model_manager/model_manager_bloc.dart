@@ -218,7 +218,7 @@ class ModelManagerBloc extends Bloc<ModelManagerEvent, ModelManagerState> {
   void _startStorageMonitoring() {
     _storageTimer?.cancel();
     add(FetchStorageStatsRequested());
-    _storageTimer = Timer.periodic(const Duration(seconds: 15), (timer) {
+    _storageTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       add(FetchStorageStatsRequested());
     });
   }
