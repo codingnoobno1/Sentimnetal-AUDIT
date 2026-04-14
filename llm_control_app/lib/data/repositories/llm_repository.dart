@@ -1,3 +1,9 @@
+import '../models/hf_model.dart';
+import '../models/job_model.dart';
+import '../models/prompt_model.dart';
+import '../models/stats_model.dart';
+import '../models/forensic_audit.dart';
+import '../services/api_service.dart';
 import '../../logic/utils/voice_command_processor.dart';
 import '../../logic/utils/command_context_builder.dart';
 import '../local/database_helper.dart';
