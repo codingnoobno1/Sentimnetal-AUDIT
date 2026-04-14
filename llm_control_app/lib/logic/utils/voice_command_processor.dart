@@ -1,7 +1,9 @@
 enum VoiceIntent {
   openClaw,
+  closeClaw,
   checkStorage,
   downloadModel,
+  startTraining,
   chat,
   unknown
 }
@@ -11,9 +13,19 @@ class VoiceCommandProcessor {
   static VoiceIntent detectIntent(String text) {
     final lowerText = text.toLowerCase();
 
+    // Intent: Close Claw
+    if (lowerText.contains("close claw") || lowerText.contains("hide panel")) {
+      return VoiceIntent.closeClaw;
+    }
+
     // Intent: Open Claw (Fine-Tuning)
     if (lowerText.contains("claw") || lowerText.contains("fine tune") || lowerText.contains("finetune")) {
       return VoiceIntent.openClaw;
+    }
+
+    // Intent: Start Training
+    if (lowerText.contains("start training") || lowerText.contains("run job") || lowerText.contains("begin training")) {
+      return VoiceIntent.startTraining;
     }
 
     // Intent: Check Storage/Space

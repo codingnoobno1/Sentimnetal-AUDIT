@@ -23,30 +23,10 @@ class _FineTuneScreenState extends State<FineTuneScreen> {
   final VoiceService _voiceService = VoiceService();
   final TextEditingController _notesController = TextEditingController();
   bool _isListening = false;
-  late VoiceCommandProcessor _commandProcessor;
 
   @override
   void initState() {
     super.initState();
-    _commandProcessor = VoiceCommandProcessor(
-      commands: {
-        'open claw': () {
-          setState(() => _isClawOpen = true);
-          _voiceService.speak("Opening configuration claw.");
-        },
-        'close claw': () {
-          setState(() => _isClawOpen = false);
-          _voiceService.speak("Closing configuration claw.");
-        },
-        'start training': () {
-          if (_isClawOpen) {
-            _submitJob();
-          } else {
-            _voiceService.speak("Please open the claw first to verify settings.");
-          }
-        },
-      },
-    );
   }
 
   void _submitJob() {
@@ -376,8 +356,32 @@ class _FineTuneScreenState extends State<FineTuneScreen> {
                       setState(() {
                         _notesController.text = text;
                       });
-                      // Check for commands
-                      _commandProcessor.process(text);
+                      
+                      // Process Voice Commands
+                      final intent = VoiceCommandProcessor.detectIntent(text);
+                      switch (intent) {
+                        case VoiceIntent.openClaw:
+                          setState(() => _isClawOpen = true);
+                          _voiceService.speak("Opening configuration claw.");
+                          _stopListeningLocally();
+                          break;
+                        case VoiceIntent.closeClaw:
+                          setState(() => _isClawOpen = false);
+                          _voiceService.speak("Closing configuration claw.");
+                          _stopListeningLocally();
+                          break;
+                        case VoiceIntent.startTraining:
+                          if (_isClawOpen) {
+                            _submitJob();
+                            _stopListeningLocally();
+                          } else {
+                            _voiceService.speak("Please open the claw first to verify settings.");
+                          }
+                          break;
+                        default:
+                          // Fallback to chat or just keep text in input
+                          break;
+                      }
                     });
                     if (started) {
                       setState(() => _isListening = true);
