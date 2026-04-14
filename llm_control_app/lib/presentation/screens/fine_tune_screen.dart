@@ -395,4 +395,9 @@ class _FineTuneScreenState extends State<FineTuneScreen> {
       ],
     );
   }
+
+  void _stopListeningLocally() {
+    _voiceService.stopListening();
+    if (mounted) setState(() => _isListening = false);
+  }
 }
