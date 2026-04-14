@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:llm_control_app/data/local/database_helper.dart';
+import 'package:llm_control_app/logic/utils/voice_command_processor.dart';
+import 'package:llm_control_app/logic/utils/command_context_builder.dart';
 import '../models/hf_model.dart';
 import '../models/forensic_audit.dart';
 import '../models/job_model.dart';
@@ -145,6 +148,22 @@ class ApiService {
       return null; // Still processing or queued
     }
     throw Exception("Audit status check failure: ${res.statusCode}");
+  }
+
+  Future<Map<String, dynamic>> parseCommand(String text, Map<String, dynamic> context) async {
+    final res = await _client.post(
+      Uri.parse("$baseUrl/api/parse-command"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "text": text,
+        "context": context,
+      }),
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body);
+    }
+    // Fallback if backend parsing fails
+    return {"status": "error", "actions": []};
   }
 
   Future<ForensicAudit> getForensicAudit(String input, String output, String modelId) async {

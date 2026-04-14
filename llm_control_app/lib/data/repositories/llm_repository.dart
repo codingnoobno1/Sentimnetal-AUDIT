@@ -1,15 +1,15 @@
-import '../models/hf_model.dart';
-import '../models/job_model.dart';
-import '../models/prompt_model.dart';
-import '../models/stats_model.dart';
-import '../models/forensic_audit.dart';
-import '../services/api_service.dart';
 import '../../logic/utils/voice_command_processor.dart';
+import '../../logic/utils/command_context_builder.dart';
+import '../local/database_helper.dart';
 
 class LlmRepository {
   final ApiService _apiService;
+  final DatabaseHelper _db = DatabaseHelper();
+  late final CommandContextBuilder _contextBuilder;
 
-  LlmRepository(this._apiService);
+  LlmRepository(this._apiService) {
+    _contextBuilder = CommandContextBuilder(this);
+  }
 
   Future<PromptResponse> sendPrompt(String prompt) => _apiService.sendPrompt(prompt);
 
@@ -40,7 +40,11 @@ class LlmRepository {
 
   // --- Model Management ---
 
-  Future<List<String>> getLocalModels() => _apiService.getLocalModels();
+  Future<List<String>> getLocalModels() async {
+    final models = await _apiService.getLocalModels();
+    await _db.cacheApiResult('local_models', models);
+    return models;
+  }
 
   Future<Map<String, dynamic>> triggerDownload(String modelId) => _apiService.triggerDownload(modelId);
 
@@ -52,7 +56,11 @@ class LlmRepository {
 
   Future<List<HfModel>> searchHuggingFace(String query) => _apiService.searchHuggingFace(query);
 
-  Future<StorageStats> getStorageStats() => _apiService.getStorageStats();
+  Future<StorageStats> getStorageStats() async {
+    final stats = await _apiService.getStorageStats();
+    await _db.cacheApiResult('storage_stats', stats.toJson());
+    return stats;
+  }
 
   Future<Map<String, dynamic>> interactWithModel(String id, String prompt) => _apiService.interactWithModel(id, prompt);
 
@@ -61,27 +69,17 @@ class LlmRepository {
   Future<ForensicAudit> getForensicAudit(String input, String output, String modelId) => 
       _apiService.getForensicAudit(input, output, modelId);
 
-  /// Centralized intent handler for routing commands/prompts
-  Future<dynamic> handleIntent(String text) async {
-    final intent = VoiceCommandProcessor.detectIntent(text);
-    final query = VoiceCommandProcessor.extractQuery(text);
-
-    switch (intent) {
-      case VoiceIntent.checkStorage:
-        return await getStorageStats();
-
-      case VoiceIntent.listModels:
-        return await getLocalModels();
-
-      case VoiceIntent.searchModels:
-        return await searchHuggingFace(query);
-
-      case VoiceIntent.downloadModel:
-        return await triggerDownload(query);
-
-      case VoiceIntent.chat:
-      default:
-        return await sendPrompt(text);
+  /// Executes a command using a hybrid approach:
+  /// 1. Builds rich context (Smart facts, Storage, History).
+  /// 2. Sends to LLM for parsing into multiple structured actions.
+  Future<Map<String, dynamic>> parseVoiceCommand(String text) async {
+    final context = await _contextBuilder.buildMasterContext(text);
+    final response = await _apiService.parseCommand(text, context);
+    
+    if (response['status'] == 'success') {
+      await _db.recordCommand(text, response['intent'] ?? 'unknown', response['actions'] ?? []);
     }
+    
+    return response;
   }
 }
