@@ -38,8 +38,25 @@ class _PromptInputState extends State<PromptInput> {
         // Detect intent
         final intent = VoiceCommandProcessor.detectIntent(text);
         final repository = context.read<LlmRepository>();
+        final query = VoiceCommandProcessor.extractQuery(text);
 
         switch (intent) {
+          case VoiceIntent.listModels:
+            _voiceService.speak("Checking your local storage for installed models...");
+            try {
+              final models = await repository.getLocalModels();
+              if (models.isEmpty) {
+                _voiceService.speak("Your local node is currently empty. No models installed.");
+              } else {
+                final names = models.map((m) => m.split('/').last).take(5).join(", ");
+                _voiceService.speak("You have ${models.length} models installed. These include $names.");
+              }
+            } catch (e) {
+              _voiceService.speak("Unable to reach the model orchestrator.");
+            }
+            _stopListeningLocally();
+            break;
+
           case VoiceIntent.checkStorage:
             _voiceService.speak("Analyzing system storage availability...");
             try {
@@ -52,30 +69,33 @@ class _PromptInputState extends State<PromptInput> {
             _stopListeningLocally();
             break;
 
+          case VoiceIntent.searchModels:
+            _voiceService.speak("Searching Hugging Face for $query...");
+            context.read<ModelManagerBloc>().add(SearchModelsRequested(query));
+            // Navigate to Model Storage screen (Index 2 in MainScaffold screens list)
+            // Note: Since we are in a sub-widget, we'll try to find the Root Scaffold if available
+            // In this specific app architecture, we'll use a push to ModelManagerScreen as a fallback
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ModelManagerScreen()));
+            _stopListeningLocally();
+            break;
+
           case VoiceIntent.openClaw:
             _voiceService.speak("Opening fine tuning panel.");
-            // Since we are in a sub-widget, we check if we can navigate or just show feedback
-            // For this app, we'll try to find the nearest Navigator or log instructions
             Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FineTuneScreen()));
             _stopListeningLocally();
             break;
 
           case VoiceIntent.downloadModel:
-            final words = text.toLowerCase().split(' ');
-            String modelId = words.isNotEmpty ? words.last : "llama-3-8b";
-            _voiceService.speak("Downloading model $modelId.");
-            await repository.triggerDownload(modelId);
+            _voiceService.speak("Triggering download sequence for $query.");
+            await repository.triggerDownload(query);
             _stopListeningLocally();
             break;
 
           case VoiceIntent.chat:
-            // Just let the user see the text, they can press send or we can auto-send
-            // The user's flow suggests auto-sending for chat too
             _handleSend();
             break;
 
           default:
-            // For unknown, we don't do anything yet or might speak a fallback
             break;
         }
       });
