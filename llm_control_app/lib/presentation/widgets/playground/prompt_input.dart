@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:llm_control_app/data/repositories/llm_repository.dart';
 import 'package:llm_control_app/presentation/screens/fine_tune_screen.dart';
+import 'package:llm_control_app/presentation/screens/model_manager_screen.dart';
 
 class PromptInput extends StatefulWidget {
   final Function(String) onSend;
